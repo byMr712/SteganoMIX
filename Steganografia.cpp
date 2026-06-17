@@ -1,20 +1,65 @@
-﻿// Steganografia.cpp : Этот файл содержит функцию "main". Здесь начинается и заканчивается выполнение программы.
-//
+﻿#include <iostream>
+#include <cstdlib>
+#include <ctime>
+#include <limits>
+#include <cmath>
+#include <vector>
+#include <conio.h>
+#include <stdlib.h>
 
-#include <iostream>
+void exitProgram();
 
-int main()
-{
-    std::cout << "Hello World!\n";
+using namespace std;
+int main() {
+    //setlocale(LC_ALL, "RUS");
+    int choice;
+    int test = 0;
+
+    do {
+        system("cls");
+
+        cout << "=== SteganoMIX v1.01 ===";
+        cout << "\nA message from developer Mr712:";
+        cout << "\nHide and view your information in a BMP file\n";
+
+        cout << "\n=== Main menu ===\n";
+        cout << "1. Hide information\n";
+        cout << "2. View information\n";
+        cout << "3. Detect secret in BMP\n";
+        cout << "4. Tests this program\n";
+        cout << "0. Exit\n\n";
+        choice = _getch() - '0';
+
+        switch (choice) {
+        case 1:
+            //for future
+            break;
+        case 2:
+            //for future
+            break;
+        case 3:
+            //for future
+            break;
+        case 4:
+            //for future
+            break;
+        case 5:
+            //for future
+            break;
+        case 6:
+            //for future
+            break;
+        case 0:
+            exitProgram();
+            break;
+        default:
+            //for future
+            break;
+        }
+    } while (choice != 7);
 }
 
-// Запуск программы: CTRL+F5 или меню "Отладка" > "Запуск без отладки"
-// Отладка программы: F5 или меню "Отладка" > "Запустить отладку"
+void exitProgram() {
+    exit(0);
+}
 
-// Советы по началу работы 
-//   1. В окне обозревателя решений можно добавлять файлы и управлять ими.
-//   2. В окне Team Explorer можно подключиться к системе управления версиями.
-//   3. В окне "Выходные данные" можно просматривать выходные данные сборки и другие сообщения.
-//   4. В окне "Список ошибок" можно просматривать ошибки.
-//   5. Последовательно выберите пункты меню "Проект" > "Добавить новый элемент", чтобы создать файлы кода, или "Проект" > "Добавить существующий элемент", чтобы добавить в проект существующие файлы кода.
-//   6. Чтобы снова открыть этот проект позже, выберите пункты меню "Файл" > "Открыть" > "Проект" и выберите SLN-файл.
