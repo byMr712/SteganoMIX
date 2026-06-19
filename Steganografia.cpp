@@ -38,7 +38,7 @@ int main() {
     int choice;
     do {
         system("cls");
-        cout << "=== SteganoMIX v1.01 ===";
+        cout << "=== SteganoMIX v1.02 ===";
         cout << "\nHide and view your information in a BMP file\n";
         cout << "\n=== Main menu ===\n";
         cout << "1. Hide information\n";
@@ -74,35 +74,35 @@ struct PixelColor {
 };
 
 // Преобразование байта в биты (ОДНА ВЕРСИЯ!)
-std::bitset<8> ByteToBit(unsigned char src) {
-    return std::bitset<8>(src);
+    bitset<8> ByteToBit(unsigned char src) {
+    return bitset<8>(src);
 }
 
 // Преобразование битов в байт (ОДНА ВЕРСИЯ!)
-unsigned char BitToByte(const std::bitset<8>& scr) {
+unsigned char BitToByte(const bitset<8>& scr) {
     return static_cast<unsigned char>(scr.to_ulong());
 }
 
 // Встраивание символа в цвет пикселя
 PixelColor EmbedSymbolToColor(const PixelColor& curColor, unsigned char symbol) {
-    std::bitset<8> symbolBits = ByteToBit(symbol);
+    bitset<8> symbolBits = ByteToBit(symbol);
     PixelColor result = curColor;
 
     // R: младшие 2 бита
-    std::bitset<8> tempR = ByteToBit(curColor.R);
+    bitset<8> tempR = ByteToBit(curColor.R);
     tempR[0] = symbolBits[0];
     tempR[1] = symbolBits[1];
     result.R = BitToByte(tempR);
 
     // G: младшие 3 бита
-    std::bitset<8> tempG = ByteToBit(curColor.G);
+    bitset<8> tempG = ByteToBit(curColor.G);
     tempG[0] = symbolBits[2];
     tempG[1] = symbolBits[3];
     tempG[2] = symbolBits[4];
     result.G = BitToByte(tempG);
 
     // B: младшие 3 бита
-    std::bitset<8> tempB = ByteToBit(curColor.B);
+    bitset<8> tempB = ByteToBit(curColor.B);
     tempB[0] = symbolBits[5];
     tempB[1] = symbolBits[6];
     tempB[2] = symbolBits[7];
@@ -313,7 +313,7 @@ vector<PixelPosition> GenerateRandomPositions(int width, int height, int count, 
     // Перемешиваем список (алгоритм Фишера-Йетса)
     for (int i = static_cast<int>(allPositions.size()) - 1; i > 0; i--) {
         int j = rand() % (i + 1);
-        std::swap(allPositions[i], allPositions[j]);
+        swap(allPositions[i], allPositions[j]);
     }
 
     // Берём первые count позиций
@@ -325,9 +325,9 @@ vector<PixelPosition> GenerateRandomPositions(int width, int height, int count, 
 }
 
 // ============ ЗАПИСЬ ТЕКСТА В BMP (там же проверки и тд, мне так лень разбивать на отдельные функции снова) ============
-void HideTextInBMP(Bitmap* bPic, const std::string& text) {
+void HideTextInBMP(Bitmap* bPic, const string& text) {
     // 1. Получаем байты текста
-    std::vector<unsigned char> bList;
+    vector<unsigned char> bList;
     for (size_t i = 0; i < text.length(); i++) {
         bList.push_back(static_cast<unsigned char>(text[i]));
     }
@@ -338,12 +338,12 @@ void HideTextInBMP(Bitmap* bPic, const std::string& text) {
 
     // 2. Проверки
     if (CountText > (width * height) - 4) {
-        MessageBox(NULL, L"Выбранная картинка мала для размещения выбранного текста", L"Информация", MB_OK);
+        MessageBox(NULL, L"No free space in the image", L"Information", MB_OK);
         return;
     }
 
     if (isEncryptionInBMP(bPic)) {
-        MessageBox(NULL, L"Файл уже зашифрован", L"Информация", MB_OK);
+        MessageBox(NULL, L"File is already encrypted", L"Information", MB_OK);
         return;
     }
 
@@ -369,7 +369,7 @@ void HideTextInBMP(Bitmap* bPic, const std::string& text) {
 }
 
 // ============ ЗАПИСЬ ТЕКСТА В BMP (С ШИФРОВАНИЕМ) ============
-void HideTextInBMP_Encrypted(Bitmap* bPic, const std::string& text, unsigned int seed) {
+void HideTextInBMP_Encrypted(Bitmap* bPic, const string& text, unsigned int seed) {
     // 1. Получаем байты текста
     vector<unsigned char> bList;
     for (size_t i = 0; i < text.length(); i++) {
@@ -382,12 +382,12 @@ void HideTextInBMP_Encrypted(Bitmap* bPic, const std::string& text, unsigned int
 
     // 2. Проверки
     if (CountText > (width * height) - 4) {
-        MessageBox(NULL, L"Выбранная картинка мала для размещения выбранного текста", L"Информация", MB_OK);
+        MessageBox(NULL, L"No free space in the image", L"Information", MB_OK);
         return;
     }
 
     if (isEncryptionInBMP(bPic)) {
-        MessageBox(NULL, L"Файл уже зашифрован", L"Информация", MB_OK);
+        MessageBox(NULL, L"File is already encrypted", L"Information", MB_OK);
         return;
     }
 
@@ -413,7 +413,7 @@ void HideTextInBMP_Encrypted(Bitmap* bPic, const std::string& text, unsigned int
 }
 
 // ============ ЧТЕНИЕ ТЕКСТА ИЗ BMP (самая простая) ============
-std::string ReadTextFromBMP(Bitmap* bPic) {
+    string ReadTextFromBMP(Bitmap* bPic) {
     // 1. Проверяем наличие признака
     if (!isEncryptionInBMP(bPic)) {
         MessageBox(NULL, L"В файле нет зашифрованной информации", L"Информация", MB_OK);
@@ -427,7 +427,7 @@ std::string ReadTextFromBMP(Bitmap* bPic) {
     }
 
     // 3. Читаем текст
-    std::vector<unsigned char> message;
+        vector<unsigned char> message;
     message.reserve(countSymbol);
 
     int width = bPic->GetWidth();
@@ -441,7 +441,7 @@ std::string ReadTextFromBMP(Bitmap* bPic) {
     }
 
     // 4. Преобразуем в строку
-    return std::string(message.begin(), message.end());
+    return string(message.begin(), message.end());
 }
 
 // ============ СОХРАНЕНИЕ BMP ============
@@ -507,8 +507,6 @@ bool SaveBMPWith(Bitmap* bPic, const char* originalPath, bool encrypted, unsigne
     // Добавляем расширение
     strcat_s(fullName, ext);
 
-    cout << "Saving to: " << fullName << endl;
-
     WCHAR wnewPath[MAX_PATH];
     MultiByteToWideChar(CP_ACP, 0, fullName, -1, wnewPath, MAX_PATH);
 
@@ -545,14 +543,14 @@ string ReadTextFromBMP_Encrypted(Bitmap* bPic, unsigned int seed) {
         message.push_back(ExtractSymbolFromColor(pixelColor));
     }
 
-    return std::string(message.begin(), message.end());
+    return string(message.begin(), message.end());
 }
 
 void infoHider() {
     system("cls");
     cout << "=== Welcome to InfoHider ===\n";
-    cout << "1. LSB (Least Significant Bit)\n";
-    cout << "2. Algorithm 2 (not implemented)\n";
+    cout << "1. LSB Algorithm (Least Significant Bit)\n";
+    cout << "2. FF Algorithm (For Future)\n";
     cout << "3. Settings\n";
     cout << "0. Return to menu\n\n";
 
@@ -591,6 +589,15 @@ void infoHider() {
             return;
         }
 
+        // ============ ПРОВЕРКА: ФАЙЛ УЖЕ ЗАШИФРОВАН ИЛИ СПРЯТАН ============
+        if (isEncryptionInBMP(bPic)) {
+            cout << "\nThis file already contains hidden information!\n";
+            cout << "Use 'View information' to read the hidden text.\n";
+            delete bPic;
+            system("pause");
+            return;
+        }
+
         int width = bPic->GetWidth();
         int height = bPic->GetHeight();
 
@@ -609,8 +616,7 @@ void infoHider() {
             return;
         }
 
-        cout << "Text length: " << text.length() << " symbols\n";
-        cout << "\nHiding information...\n";
+        cout << "\nText length: " << text.length() << " symbols\n";
 
         bool encrypted = g_settings.useEncryption;
         unsigned int seed = 0;
@@ -626,13 +632,11 @@ void infoHider() {
             HideTextInBMP(bPic, text);
         }
 
-        cout << "Saving file...\n";
-
-        if (SaveBMPWith(bPic, path, encrypted, seed)) {
-            cout << "\nInformation successfully hidden and saved!\n";
+        if (!SaveBMPWith(bPic, path, encrypted, seed)) {
+            cout << "\nError saving file!\n";
         }
         else {
-            cout << "\nError saving file!\n";
+            cout << "\nInformation successfully hidden and saved!\n";
         }
 
         delete bPic;
@@ -642,8 +646,8 @@ void infoHider() {
 
     if (alg == 2) {
         system("cls");
-        cout << "=== Algorithm 2 ===\n";
-        cout << "Not implemented yet.\n";
+        cout << "=== FF Algorithm ===\n";
+        cout << "Error 404\n";
         system("pause");
         return;
     }
@@ -710,7 +714,8 @@ void infoViewer() {
             cout << "\n=== Hidden text ===\n";
             cout << hiddenText << endl;
             cout << "==================\n";
-            cout << "Text length: " << hiddenText.length() << " symbols\n";
+            cout << "Text length: " << hiddenText.length() << " symbols";
+            cout << "\n==================\n";
         }
         else {
             cout << "\nNo text found.\n";
