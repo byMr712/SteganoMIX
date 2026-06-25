@@ -126,29 +126,32 @@ bool isEncryption(const PixelColor& pixelColor) {
 
 // ============ СТЕПЕНЬ УПАКОВКИ ============
 int GetBitsPerChannel(int packLevel) {
+    if (packLevel <= 0 || packLevel > 9) packLevel = 3;
     if (packLevel >= 8) return 8;
     return packLevel;
 }
 
 int GetBitsPerPixel(int packLevel) {
+    if (packLevel <= 0 || packLevel > 9) packLevel = 3;
     if (packLevel >= 8) return 24;
     return packLevel * 3;
 }
 
 int GetMaxCapacity(int width, int height, int packLevel) {
+    if (packLevel <= 0 || packLevel > 9) packLevel = 3;
     int totalPixels = width * height;
     int bitsPerPixel = GetBitsPerPixel(packLevel);
     int availablePixels = totalPixels - 4;
 
-    // ============ ПРОВЕРКА ============
     if (availablePixels <= 0) {
-        return 0;  // Нельзя ничего записать
+        return 0;
     }
 
     return (availablePixels * bitsPerPixel) / 8;
 }
 
 unsigned char GetBitMask(int packLevel) {
+    if (packLevel <= 0 || packLevel > 9) packLevel = 3;
     if (packLevel >= 8) return 0xFF;
     return (1 << packLevel) - 1;
 }
@@ -206,8 +209,10 @@ void SetPixelColor(Bitmap* bPic, int x, int y, const PixelColor& color) {
 }
 
 bool isEncryptionInBMP(Bitmap* bPic) {
+    int packLevel = g_settings.packLevel;
     PixelColor color = GetPixelColor(bPic, 0, 0);
-    return isEncryption(color);
+    unsigned char extracted = ExtractSymbolFromColorLevel(color, packLevel);
+    return (extracted == '/');
 }
 
 bool isEncryptionInBMPLevel(Bitmap* bPic, int packLevel) {
@@ -230,8 +235,6 @@ unsigned int GenerateSeed(int width, int height) {
 struct PixelPosition {
     int x, y;
 };
-
-#include <random>  // Добавь в начале файла
 
 vector<PixelPosition> GenerateRandomPositions(int width, int height, int count, unsigned int seed) {
     vector<PixelPosition> positions;
@@ -259,8 +262,9 @@ vector<PixelPosition> GenerateRandomPositions(int width, int height, int count, 
     return positions;
 }
 
-// ============ ЗАПИСЬ КОЛИЧЕСТВА СИМВОЛОВ ДО РАЗДЕЛИТЕЛЯ ============
+// ============ ЗАПИСЬ КОЛИЧЕСТВА СИМВОЛОВ ============
 void WriteCountTextDynamic(int count, Bitmap* src, int packLevel) {
+    if (packLevel <= 0 || packLevel > 9) packLevel = 3;
     string countStr = to_string(count) + ":";
 
     for (size_t i = 0; i < countStr.length(); i++) {
@@ -271,40 +275,48 @@ void WriteCountTextDynamic(int count, Bitmap* src, int packLevel) {
     }
 }
 
-// ============ ЧТЕНИЕ КОЛИЧЕСТВА СИМВОЛОВ ДО РАЗДЕЛИТЕЛЯ ============
+// ============ ЧТЕНИЕ КОЛИЧЕСТВА СИМВОЛОВ ============
 int ReadCountTextDynamic(Bitmap* src, int packLevel) {
+    cout << "=== DEBUG ReadCountTextDynamic ===" << endl;
+    cout << "DEBUG: packLevel = " << packLevel << endl;
+
+    if (packLevel <= 0 || packLevel > 9) packLevel = 3;
     string countStr = "";
-    int i = 1;  // начинаем с пикселя (0,1)
+    int i = 1;
 
     while (true) {
         PixelColor color = GetPixelColor(src, 0, i);
         unsigned char ch = ExtractSymbolFromColorLevel(color, packLevel);
+        cout << "DEBUG: i=" << i << " ch=" << (int)ch << " ('" << (char)ch << "')" << endl;
 
         if (ch == ':') {
-            break;  // Остановка на разделителе
+            cout << "DEBUG: found ':' at i=" << i << endl;
+            break;
         }
 
         if (ch >= '0' && ch <= '9') {
             countStr += static_cast<char>(ch);
         }
         else {
-            // Если встретится не цифру и не ':' — возвращаем 0
+            cout << "DEBUG: non-digit, non-colon, returning 0" << endl;
             return 0;
         }
 
         i++;
     }
 
+    cout << "DEBUG: countStr = '" << countStr << "'" << endl;
     if (countStr.empty()) {
         return 0;
     }
 
-    return stoi(countStr);
+    int result = stoi(countStr);
+    cout << "DEBUG: result = " << result << endl;
+    return result;
 }
 
 // ============ ЗАПИСЬ ТЕКСТА ============
 void HideTextInBMP(Bitmap* bPic, const string& text, const char* extension) {
-    // ============ ДОБАВЛЯЕМ ТИП ФАЙЛА В КОНЕЦ ТЕКСТА ============
     string fullText = text + '\0' + extension;
 
     vector<unsigned char> bList;
@@ -326,17 +338,18 @@ void HideTextInBMP(Bitmap* bPic, const string& text, const char* extension) {
         return;
     }
 
-    PixelColor pixel00 = GetPixelColor(bPic, 0, 0);
-    SetPixelColor(bPic, 0, 0, EmbedSymbolToColor(pixel00, '/'));
-
     int packLevel = g_settings.packLevel;
+
+    PixelColor pixel00 = GetPixelColor(bPic, 0, 0);
+    SetPixelColor(bPic, 0, 0, EmbedSymbolToColorLevel(pixel00, '/', packLevel));
+
     WriteCountTextDynamic(CountText, bPic, packLevel);
 
     int index = 0;
     for (int i = 4; i < width && index < CountText; i++) {
         for (int j = 0; j < height && index < CountText; j++) {
             PixelColor pixelColor = GetPixelColor(bPic, i, j);
-            PixelColor newColor = EmbedSymbolToColor(pixelColor, bList[index]);
+            PixelColor newColor = EmbedSymbolToColorLevel(pixelColor, bList[index], packLevel);
             SetPixelColor(bPic, i, j, newColor);
             index++;
         }
@@ -344,7 +357,6 @@ void HideTextInBMP(Bitmap* bPic, const string& text, const char* extension) {
 }
 
 void HideTextInBMP_Encrypted(Bitmap* bPic, const string& text, unsigned int seed, const char* extension) {
-    // ============ ДОБАВЛЯЕМ ТИП ФАЙЛА В КОНЕЦ ТЕКСТА ============
     string fullText = text + '\0' + extension;
 
     vector<unsigned char> bList;
@@ -375,14 +387,11 @@ void HideTextInBMP_Encrypted(Bitmap* bPic, const string& text, unsigned int seed
         return;
     }
 
-    // 1. Признак
     PixelColor pixel00 = GetPixelColor(bPic, 0, 0);
     SetPixelColor(bPic, 0, 0, EmbedSymbolToColorLevel(pixel00, '/', packLevel));
 
-    // 2. Размер
     WriteCountTextDynamic(CountText, bPic, packLevel);
 
-    // 3. Текст + тип файла (теперь будет вместе)
     vector<PixelPosition> positions = GenerateRandomPositions(width, height, CountText, seed);
     for (int i = 0; i < CountText && i < (int)positions.size(); i++) {
         PixelColor pixelColor = GetPixelColor(bPic, positions[i].x, positions[i].y);
@@ -409,7 +418,6 @@ string ReadTextFromBMP_Encrypted(Bitmap* bPic, unsigned int seed, const char* fi
     int width = bPic->GetWidth();
     int height = bPic->GetHeight();
 
-    // 1. Читаем весь текст (с типом файла внутри)
     vector<PixelPosition> positions = GenerateRandomPositions(width, height, countSymbol, seed);
     vector<unsigned char> fullData;
     fullData.reserve(countSymbol);
@@ -419,17 +427,14 @@ string ReadTextFromBMP_Encrypted(Bitmap* bPic, unsigned int seed, const char* fi
         fullData.push_back(ExtractSymbolFromColorLevel(pixelColor, packLevel));
     }
 
-    // 2. Находим разделитель '\0'
     string fullString(fullData.begin(), fullData.end());
     size_t sepPos = fullString.find('\0');
 
     if (sepPos == string::npos) {
-        // Нет разделителя — значит тип файла не сохранялся
         cout << "No file type found (default: .bmp)\n";
         return fullString;
     }
 
-    // 3. Отделяем текст от типа файла
     string hiddenText = fullString.substr(0, sepPos);
     string extension = fullString.substr(sepPos + 1);
 
@@ -450,6 +455,7 @@ string ReadTextFromBMP(Bitmap* bPic) {
     }
 
     int packLevel = g_settings.packLevel;
+
     int countSymbol = ReadCountTextDynamic(bPic, packLevel);
 
     if (countSymbol <= 0) {
@@ -465,7 +471,7 @@ string ReadTextFromBMP(Bitmap* bPic) {
     for (int i = 4; i < width && (int)message.size() < countSymbol; i++) {
         for (int j = 0; j < height && (int)message.size() < countSymbol; j++) {
             PixelColor pixelColor = GetPixelColor(bPic, i, j);
-            message.push_back(ExtractSymbolFromColor(pixelColor));
+            message.push_back(ExtractSymbolFromColorLevel(pixelColor, packLevel));
         }
     }
 
@@ -587,7 +593,7 @@ void showSettings() {
     cout << "1. Encryption: " << (g_settings.useEncryption ? "ON" : "OFF") << "\n";
     cout << "2. Add suffix to filename: " << (g_settings.useSuffix ? "ON" : "OFF") << "\n";
     cout << "3. Add seed to filename: " << (g_settings.useSeedSuffix ? "ON" : "OFF") << "\n";
-    cout << "4. Pack level (1-9): " << g_settings.packLevel << "\n";
+    cout << "4. Pack level (3-9): " << g_settings.packLevel << "\n";
     cout << "   Bits per pixel: " << GetBitsPerPixel(g_settings.packLevel) << "\n";
     cout << "0. Return\n\n";
 }
@@ -609,16 +615,16 @@ void changeSettings() {
             g_settings.useSeedSuffix = !g_settings.useSeedSuffix;
             break;
         case 4: {
-            cout << "\nEnter pack level (1-9): ";
+            cout << "\nEnter pack level (3-9): ";
             int level;
             cin >> level;
-            if (level >= 1 && level <= 9) {
+            if (level >= 3 && level <= 9) {
                 g_settings.packLevel = level;
                 cout << "Pack level set to: " << level << "\n";
                 cout << "Bits per pixel: " << GetBitsPerPixel(level) << "\n";
             }
             else {
-                cout << "Invalid level! Use 1-9.\n";
+                cout << "Invalid level! Use 3-9.\n";
             }
             system("pause");
             break;
@@ -705,7 +711,6 @@ void infoHider() {
             return;
         }
 
-        // ============ ВЫВОДИМ РАЗМЕР ТЕКСТА ============
         int textBytes = static_cast<int>(text.length());
         cout << "\nText length: " << text.length() << " symbols (" << textBytes << " bytes)" << endl;
 
@@ -713,7 +718,6 @@ void infoHider() {
         unsigned int seed = 0;
 
         if (encrypted) {
-            // ============ ПРОВЕРКА ВМЕСТИМОСТИ ДО ГЕНЕРАЦИИ SEED ============
             if (textBytes > capacity) {
                 cout << "\nERROR: Text too large for this image!\n";
                 cout << "Text size: " << textBytes << " bytes\n";
@@ -743,7 +747,6 @@ void infoHider() {
             HideTextInBMP_Encrypted(bPic, text, seed, extension.c_str());
         }
         else {
-            // ============ ПРОВЕРКА ВМЕСТИМОСТИ ДЛЯ ОБЫЧНОГО РЕЖИМА ============
             int normalCapacity = (width * height) - 4;
             if (textBytes > normalCapacity) {
                 cout << "\nERROR: Text too large for this image!\n";
@@ -754,7 +757,6 @@ void infoHider() {
                 return;
             }
 
-            // Получаем расширение
             string extension = "";
             const char* p = strrchr(path, '.');
             if (p != nullptr) {
@@ -764,7 +766,7 @@ void infoHider() {
                 extension = "txt";
             }
 
-            HideTextInBMP(bPic, text, extension.c_str());  // ← ИСПРАВЛЕНО
+            HideTextInBMP(bPic, text, extension.c_str());
         }
 
         if (!SaveBMPWith(bPic, path, encrypted, seed)) {
