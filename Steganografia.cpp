@@ -277,8 +277,6 @@ void WriteCountTextDynamic(int count, Bitmap* src, int packLevel) {
 
 // ============ ЧТЕНИЕ КОЛИЧЕСТВА СИМВОЛОВ ============
 int ReadCountTextDynamic(Bitmap* src, int packLevel) {
-    cout << "=== DEBUG ReadCountTextDynamic ===" << endl;
-    cout << "DEBUG: packLevel = " << packLevel << endl;
 
     if (packLevel <= 0 || packLevel > 9) packLevel = 3;
     string countStr = "";
@@ -287,10 +285,8 @@ int ReadCountTextDynamic(Bitmap* src, int packLevel) {
     while (true) {
         PixelColor color = GetPixelColor(src, 0, i);
         unsigned char ch = ExtractSymbolFromColorLevel(color, packLevel);
-        cout << "DEBUG: i=" << i << " ch=" << (int)ch << " ('" << (char)ch << "')" << endl;
 
         if (ch == ':') {
-            cout << "DEBUG: found ':' at i=" << i << endl;
             break;
         }
 
@@ -298,20 +294,17 @@ int ReadCountTextDynamic(Bitmap* src, int packLevel) {
             countStr += static_cast<char>(ch);
         }
         else {
-            cout << "DEBUG: non-digit, non-colon, returning 0" << endl;
             return 0;
         }
 
         i++;
     }
 
-    cout << "DEBUG: countStr = '" << countStr << "'" << endl;
     if (countStr.empty()) {
         return 0;
     }
 
     int result = stoi(countStr);
-    cout << "DEBUG: result = " << result << endl;
     return result;
 }
 
